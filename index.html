@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ticket PDF Generator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+JP:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="hero">
+      <p class="eyebrow">Static Prepress Tool</p>
+      <h1>Ticket PDF Generator</h1>
+      <p class="hero-copy">塗り足しトンボミシン目付きのチケット入稿用PDFを簡単作成</p>
+    </header>
+
+    <main class="layout">
+      <section class="panel form-panel" aria-labelledby="settings-title">
+        <div class="panel-heading">
+          <h2 id="settings-title">設定フォーム</h2>
+          <p>サイズ、文言、連番を設定するとプレビューと PDF に反映されます。</p>
+        </div>
+        <div class="form-toolbar">
+          <p class="save-status" id="saveStatus">入力内容はこのブラウザに自動保存されます</p>
+          <div class="toolbar-actions">
+            <button type="button" class="secondary-button" id="exportSettingsButton">設定を書き出し</button>
+            <button type="button" class="secondary-button" id="importSettingsButton">設定を読み込み</button>
+            <button type="button" class="secondary-button" id="resetFontSizesButton">フォントサイズを初期化</button>
+            <button type="button" class="secondary-button danger-button" id="clearSavedDataButton">保存内容を初期化</button>
+          </div>
+        </div>
+
+        <form id="ticket-form" novalidate>
+          <input id="importSettingsInput" type="file" accept="application/json,.json" hidden>
+          <section class="form-section accordion is-open" data-accordion>
+            <button type="button" class="accordion-toggle" data-accordion-toggle aria-expanded="true">
+              <span>サイズ設定</span>
+            </button>
+            <div class="accordion-panel" data-accordion-panel>
+            <label class="field">
+              <span>チケットサイズ</span>
+              <select id="sizePreset" name="sizePreset">
+                <option value="55x150">55 × 150 mm</option>
+                <option value="76x150">76 × 150 mm</option>
+                <option value="60x170">60 × 170 mm</option>
+                <option value="custom">カスタム</option>
+              </select>
+            </label>
+
+            <label class="check-field">
+              <input id="swapOrientation" name="swapOrientation" type="checkbox">
+              <span>縦横を入れ替える</span>
+            </label>
+
+            <div id="customSizeFields" class="field-grid is-hidden" aria-hidden="true">
+              <label class="field">
+                <span>幅（mm）</span>
+                <input id="customWidth" name="customWidth" type="number" min="20" max="200" step="1" value="55">
+              </label>
+              <label class="field">
+                <span>高さ（mm）</span>
+                <input id="customHeight" name="customHeight" type="number" min="20" max="100" step="1" value="100">
+              </label>
+            </div>
+
+            <div class="meta-note">
+              <span>塗り足し</span>
+              <strong>上下左右 3mm 固定</strong>
+            </div>
+            </div>
+          </section>
+
+          <section class="form-section accordion" data-accordion>
+            <button type="button" class="accordion-toggle" data-accordion-toggle aria-expanded="false">
+              <span>見た目設定</span>
+            </button>
+            <div class="accordion-panel" data-accordion-panel hidden>
+              <div class="field-grid">
+                <label class="field">
+                  <span>背景</span>
+                  <select id="backgroundStyle" name="backgroundStyle">
+                    <option value="none">なし</option>
+                    <option value="solid">単色</option>
+                    <option value="gradient">グラデーション</option>
+                  </select>
+                </label>
+                <label class="field">
+                  <span>方向</span>
+                  <select id="backgroundDirection" name="backgroundDirection">
+                    <option value="vertical">縦</option>
+                    <option value="horizontal">横</option>
+                    <option value="diagonal">斜め</option>
+                  </select>
+                </label>
+                <label class="field">
+                  <span>色1</span>
+                  <div class="color-field">
+                    <span class="color-swatch" id="backgroundColorASwatch" aria-hidden="true"></span>
+                    <input id="backgroundColorA" name="backgroundColorA" type="color" value="#ffffff">
+                  </div>
+                </label>
+                <label class="field">
+                  <span>色2</span>
+                  <div class="color-field">
+                    <span class="color-swatch" id="backgroundColorBSwatch" aria-hidden="true"></span>
+                    <input id="backgroundColorB" name="backgroundColorB" type="color" value="#dfe6ea">
+                  </div>
+                </label>
+                <label class="field">
+                  <span>文字色</span>
+                  <div class="color-field">
+                    <span class="color-swatch" id="fontColorSwatch" aria-hidden="true"></span>
+                    <input id="fontColor" name="fontColor" type="color" value="#111111">
+                  </div>
+                </label>
+                <label class="field">
+                  <span>補助ラベル色</span>
+                  <div class="color-field">
+                    <span class="color-swatch" id="labelColorSwatch" aria-hidden="true"></span>
+                    <input id="labelColor" name="labelColor" type="color" value="#666666">
+                  </div>
+                </label>
+              </div>
+            </div>
+          </section>
+
+          <section class="form-section accordion" data-accordion>
+            <button type="button" class="accordion-toggle" data-accordion-toggle aria-expanded="false">
+              <span>ミシン目設定</span>
+            </button>
+            <div class="accordion-panel" data-accordion-panel hidden>
+            <label class="check-field">
+              <input id="perforationEnabled" name="perforationEnabled" type="checkbox" checked>
+              <span>ミシン目を入れる</span>
+            </label>
+            <div id="perforationFields" class="field-grid">
+              <label class="field">
+                <span id="perforationLabel">ミシン位置（上から mm）</span>
+                <input id="perforationPosition" name="perforationPosition" type="number" min="1" step="1" value="40">
+              </label>
+            </div>
+            <div id="perforationPrintNote" class="print-note">
+              <span>印刷所への指示文</span>
+              <p id="perforationPrintComment">仕上がり位置に合わせてミシン目加工を1本お願いします。</p>
+            </div>
+            </div>
+          </section>
+
+          <section class="form-section accordion is-open" data-accordion>
+            <button type="button" class="accordion-toggle" data-accordion-toggle aria-expanded="true">
+              <span>本券入力</span>
+            </button>
+            <div class="accordion-panel" data-accordion-panel>
+            <div class="field-grid">
+              <label class="field">
+                <span>イベント名</span>
+                <input id="eventName" name="eventName" type="text" value="春の演劇祭">
+              </label>
+              <label class="field">
+                <span>会場名</span>
+                <input id="venue" name="venue" type="text" value="〇〇ホール">
+              </label>
+              <label class="field">
+                <span>開催日</span>
+                <input id="date" name="date" type="text" value="2026.04.12">
+              </label>
+              <label class="field">
+                <span>開演時間</span>
+                <input id="time" name="time" type="text" value="18:30">
+              </label>
+              <label class="field">
+                <span>座席</span>
+                <input id="seat" name="seat" type="text" value="自由席">
+              </label>
+              <label class="field">
+                <span>価格</span>
+                <input id="price" name="price" type="text" value="3,000円">
+              </label>
+            </div>
+            <label class="field">
+              <span>備考</span>
+              <textarea id="notes" name="notes" rows="3">開場は30分前</textarea>
+            </label>
+            </div>
+          </section>
+
+          <section class="form-section accordion" data-accordion>
+            <button type="button" class="accordion-toggle" data-accordion-toggle aria-expanded="false">
+              <span>本券文字サイズ</span>
+            </button>
+            <div class="accordion-panel" data-accordion-panel hidden>
+            <div class="field-grid">
+              <label class="field">
+                <span>イベント名</span>
+                <select id="fontSizeEventName" name="fontSizeEventName">
+                  <option value="36">36pt</option>
+                  <option value="30">30pt</option>
+                  <option value="24" selected>24pt（デフォルト）</option>
+                  <option value="16">16pt</option>
+                  <option value="14">14pt</option>
+                  <option value="12">12pt</option>
+                  <option value="10">10pt</option>
+                  <option value="8">8pt</option>
+                  <option value="6">6pt</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>会場名</span>
+                <select id="fontSizeVenue" name="fontSizeVenue">
+                  <option value="36">36pt</option>
+                  <option value="30">30pt</option>
+                  <option value="24">24pt</option>
+                  <option value="16">16pt</option>
+                  <option value="14">14pt</option>
+                  <option value="12">12pt</option>
+                  <option value="10" selected>10pt（デフォルト）</option>
+                  <option value="8">8pt</option>
+                  <option value="6">6pt</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>開催日</span>
+                <select id="fontSizeDate" name="fontSizeDate">
+                  <option value="36">36pt</option>
+                  <option value="30">30pt</option>
+                  <option value="24">24pt</option>
+                  <option value="16">16pt</option>
+                  <option value="14">14pt</option>
+                  <option value="12">12pt</option>
+                  <option value="10" selected>10pt（デフォルト）</option>
+                  <option value="8">8pt</option>
+                  <option value="6">6pt</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>開演時間</span>
+                <select id="fontSizeTime" name="fontSizeTime">
+                  <option value="36">36pt</option>
+                  <option value="30">30pt</option>
+                  <option value="24">24pt</option>
+                  <option value="16">16pt</option>
+                  <option value="14">14pt</option>
+                  <option value="12">12pt</option>
+                  <option value="10" selected>10pt（デフォルト）</option>
+                  <option value="8">8pt</option>
+                  <option value="6">6pt</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>座席</span>
+                <select id="fontSizeSeat" name="fontSizeSeat">
+                  <option value="36">36pt</option>
+                  <option value="30">30pt</option>
+                  <option value="24">24pt</option>
+                  <option value="16" selected>16pt（デフォルト）</option>
+                  <option value="14">14pt</option>
+                  <option value="12">12pt</option>
+                  <option value="10">10pt</option>
+                  <option value="8">8pt</option>
+                  <option value="6">6pt</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>価格</span>
+                <select id="fontSizePrice" name="fontSizePrice">
+                  <option value="36">36pt</option>
+                  <option value="30">30pt</option>
+                  <option value="24">24pt</option>
+                  <option value="16">16pt</option>
+                  <option value="14">14pt</option>
+                  <option value="12">12pt</option>
+                  <option value="10" selected>10pt（デフォルト）</option>
+                  <option value="8">8pt</option>
+                  <option value="6">6pt</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>備考</span>
+                <select id="fontSizeNotes" name="fontSizeNotes">
+                  <option value="36">36pt</option>
+                  <option value="30">30pt</option>
+                  <option value="24">24pt</option>
+                  <option value="16">16pt</option>
+                  <option value="14">14pt</option>
+                  <option value="12">12pt</option>
+                  <option value="10">10pt</option>
+                  <option value="8" selected>8pt（デフォルト）</option>
+                  <option value="6">6pt</option>
+                </select>
+              </label>
+            </div>
+            </div>
+          </section>
+
+          <section class="form-section accordion" data-accordion>
+            <button type="button" class="accordion-toggle" data-accordion-toggle aria-expanded="false">
+              <span>半券文字サイズ</span>
+            </button>
+            <div class="accordion-panel" data-accordion-panel hidden>
+            <div class="field-grid">
+              <label class="field">
+                <span>イベント名</span>
+                <select id="fontSizeStubEventName" name="fontSizeStubEventName">
+                  <option value="36">36pt</option>
+                  <option value="30">30pt</option>
+                  <option value="24">24pt</option>
+                  <option value="16" selected>16pt（デフォルト）</option>
+                  <option value="14">14pt</option>
+                  <option value="12">12pt</option>
+                  <option value="10">10pt</option>
+                  <option value="8">8pt</option>
+                  <option value="6">6pt</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>開催日</span>
+                <select id="fontSizeStubDate" name="fontSizeStubDate">
+                  <option value="36">36pt</option>
+                  <option value="30">30pt</option>
+                  <option value="24">24pt</option>
+                  <option value="16">16pt</option>
+                  <option value="14">14pt</option>
+                  <option value="12">12pt</option>
+                  <option value="10">10pt</option>
+                  <option value="8" selected>8pt（デフォルト）</option>
+                  <option value="6">6pt</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>開演時間</span>
+                <select id="fontSizeStubTime" name="fontSizeStubTime">
+                  <option value="36">36pt</option>
+                  <option value="30">30pt</option>
+                  <option value="24">24pt</option>
+                  <option value="16">16pt</option>
+                  <option value="14">14pt</option>
+                  <option value="12">12pt</option>
+                  <option value="10">10pt</option>
+                  <option value="8" selected>8pt（デフォルト）</option>
+                  <option value="6">6pt</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>連番</span>
+                <select id="fontSizeSerial" name="fontSizeSerial">
+                  <option value="36">36pt</option>
+                  <option value="30">30pt</option>
+                  <option value="24">24pt</option>
+                  <option value="16" selected>16pt（デフォルト）</option>
+                  <option value="14">14pt</option>
+                  <option value="12">12pt</option>
+                  <option value="10">10pt</option>
+                  <option value="8">8pt</option>
+                  <option value="6">6pt</option>
+                </select>
+              </label>
+            </div>
+            </div>
+          </section>
+
+          <section class="form-section accordion" data-accordion>
+            <button type="button" class="accordion-toggle" data-accordion-toggle aria-expanded="false">
+              <span>連番設定</span>
+            </button>
+            <div class="accordion-panel" data-accordion-panel hidden>
+            <label class="check-field">
+              <input id="serialEnabled" name="serialEnabled" type="checkbox" checked>
+              <span>連番を入れる</span>
+            </label>
+            <div id="serialFields" class="field-grid">
+              <label class="field">
+                <span>出力方法</span>
+                <select id="serialMode" name="serialMode">
+                  <option value="placeholder">印刷所で差し込み</option>
+                  <option value="numbered">このアプリで連番PDFを作る</option>
+                </select>
+              </label>
+              <label class="field">
+                <span id="serialStartLabel">差し込み記号</span>
+                <input id="serialStart" name="serialStart" type="text" value="###">
+              </label>
+              <label class="field">
+                <span>発行枚数</span>
+                <input id="serialCount" name="serialCount" type="number" min="1" max="1000" step="1" value="10">
+              </label>
+            </div>
+            <div class="print-note">
+              <span>補足</span>
+              <p id="serialModeHint">`###` をプレースホルダーとしてPDFに残し、印刷所で連番差し込みを依頼します。</p>
+            </div>
+            <div class="print-note">
+              <span>印刷所への指示文</span>
+              <p id="serialPrintComment">チケットの「###」部分に整理番号を連番で挿入してください。</p>
+            </div>
+            </div>
+          </section>
+
+          <div id="errorBox" class="error-box" role="alert" aria-live="polite"></div>
+        </form>
+      </section>
+
+      <section class="panel preview-panel" aria-labelledby="preview-title">
+        <div class="panel-heading">
+          <h2 id="preview-title">プレビュー</h2>
+          <p>Canvas 上で塗り足し、仕上がり線、トンボ、ミシン目を確認できます。</p>
+        </div>
+        <div class="preview-wrap">
+          <canvas id="previewCanvas" width="960" height="640"></canvas>
+        </div>
+      </section>
+    </main>
+
+    <section class="panel output-panel" aria-labelledby="output-title">
+      <div class="panel-heading">
+        <h2 id="output-title">出力</h2>
+        <p>1ページ1枚で `ticket.pdf` を生成します。</p>
+      </div>
+      <div class="checklist-box" aria-labelledby="checklist-title">
+        <div class="checklist-heading">
+          <strong id="checklist-title">入稿前チェック</strong>
+          <p id="checklistStatus">必要な項目を確認するとPDF生成できます。</p>
+        </div>
+        <div id="preflightChecklist" class="checklist-list"></div>
+      </div>
+      <div class="output-row">
+        <div class="output-note">
+          <strong>PDFテキストについて</strong>
+          <p>PDF では Canvas 描画結果を画像として埋め込むため、日本語テキストもブラウザ表示に近い見た目で出力されます。</p>
+        </div>
+        <button id="generatePdfButton" type="button" class="primary-button">PDFを生成</button>
+      </div>
+    </section>
+
+    <footer class="app-credit" aria-label="クレジット">
+      <p class="credit-text">
+        Created by
+        <a
+          class="credit-link"
+          href="https://humandoll26.github.io/portfolio/"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          未完製作所
+        </a>
+      </p>
+      <a
+        class="tip-button"
+        href="https://buy.stripe.com/eVqaEW31F85U9UE22NdMI01"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        TIPで支援する
+      </a>
+    </footer>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/pdf-lib/dist/pdf-lib.min.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
