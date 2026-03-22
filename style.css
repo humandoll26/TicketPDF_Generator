@@ -386,6 +386,53 @@ textarea {
   margin-bottom: 6px;
 }
 
+.customize-card {
+  margin-top: 20px;
+}
+
+.customize-card-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.customize-card-head h2 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.customize-card p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.customize-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: #fafaf8;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+}
+
+.customize-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.customize-link {
+  text-decoration: none;
+}
+
 .primary-button {
   border: 0;
   border-radius: 999px;
@@ -477,6 +524,10 @@ textarea {
 
   .primary-button {
     width: 100%;
+  }
+
+  .customize-actions {
+    flex-direction: column;
   }
 }
 
